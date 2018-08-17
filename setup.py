@@ -20,7 +20,7 @@ setup(
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
-        'Topic :: Software Development :: Utilities',
+        'Topic :: Software Development :: Libraries :: Python Modules',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
@@ -31,12 +31,5 @@ setup(
     ],
     keywords='keyvault azure adal msi managed-service-identity',
     packages=find_packages(),
-    install_requires=['msrestazure==0.5.0', 'azure-keyvault==1.1.0'],
-    project_urls={
-        'Bug Reports': 'https://github.com/dany74q/keyvaultlib/issues',
-        'Source': 'https://github.com/dany74q/keyvaultlib',
-        'MSI (Managed Service Identity) Docs': 'https://docs.microsoft.com/en-us/azure/active-directory/managed-service-identity/overview',
-        'ADAL (Active Directory Authentication Libraries) Docs': 'https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-authentication-libraries',
-        'KeyVault Client Docs': 'https://docs.microsoft.com/en-us/azure/key-vault/key-vault-overview'
-    },
+    install_requires=['msrestazure==0.5.0', 'azure-keyvault==1.1.0']
 )
