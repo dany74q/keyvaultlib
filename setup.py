@@ -33,8 +33,8 @@ setup(
     packages=find_packages(),
     install_requires=['msrestazure==0.5.0', 'azure-keyvault==1.1.0'],
     project_urls={
-        'Bug Reports': 'https://github.com/pypa/sampleproject/issues',
-        'Source': 'https://github.com/pypa/sampleproject/',
+        'Bug Reports': 'https://github.com/dany74q/keyvaultlib/issues',
+        'Source': 'https://github.com/dany74q/keyvaultlib',
         'MSI (Managed Service Identity) Docs': 'https://docs.microsoft.com/en-us/azure/active-directory/managed-service-identity/overview',
         'ADAL (Active Directory Authentication Libraries) Docs': 'https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-authentication-libraries',
         'KeyVault Client Docs': 'https://docs.microsoft.com/en-us/azure/key-vault/key-vault-overview'
