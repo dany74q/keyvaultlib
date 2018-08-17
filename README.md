@@ -44,7 +44,7 @@ Next, import KeyVaultOAuthClient and choose your authentication strategy;
 Currently supported: Using Service Principal credentials for ADAL or MSI
 
 ```python
-from keyvaultlib import KeyVaultOAuthClient
+from keyvaultlib.key_vault import KeyVaultOAuthClient
 
 # MSI Example
 client = KeyVaultOAuthClient(use_msi=True)
