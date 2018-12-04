@@ -43,7 +43,7 @@ class KeyVaultOAuthClient(KeyVaultClient):
         self._using_msi = use_msi
 
         if use_msi:
-            msi_creds = MSICredentials(resource=self.KEY_VAULT_RESOURCE_URL)
+            msi_creds = MSICredentials(resource=self.KEY_VAULT_RESOURCE_URL, client_id=client_id)
             super(KeyVaultOAuthClient, self).__init__(msi_creds, *args, **kwargs)
         else:
             adal_creds = ServicePrincipalCredentials(client_id, client_secret, tenant=tenant_id,
