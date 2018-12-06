@@ -24,8 +24,8 @@ class KeyVaultOAuthClient(KeyVaultClient):
         """
         Initiates a new key vault client with either MSI or ADAL token providers underneath.
 
-        :param client_id:       An optional (When using MSI) client ID - Of a user or an application that is authorized
-                                with your KeyVault resources
+        :param client_id:       An optional (when using System-Assigned MSI only) client ID - Of a user or an application that is authorized
+                                with your KeyVault resources. Required when using User-Assigned MSI and ADAL
         :param client_secret:   An optional (When using MSI) client secret - Of a user or an application that is authorized
                                 with your KeyVault resources
         :param tenant_id:       An optional (When using MSI) tenant ID of your KeyVault resources
@@ -43,7 +43,7 @@ class KeyVaultOAuthClient(KeyVaultClient):
         self._using_msi = use_msi
 
         if use_msi:
-            msi_creds = MSICredentials(resource=self.KEY_VAULT_RESOURCE_URL)
+            msi_creds = MSICredentials(resource=self.KEY_VAULT_RESOURCE_URL, client_id=client_id)
             super(KeyVaultOAuthClient, self).__init__(msi_creds, *args, **kwargs)
         else:
             adal_creds = ServicePrincipalCredentials(client_id, client_secret, tenant=tenant_id,
