@@ -1,7 +1,9 @@
 import logging
 from logging import Logger
-
 # noinspection PyPackageRequirements
+from types import TupleType, DictionaryType
+from urlparse import urlsplit, urlunsplit
+
 from azure.keyvault import KeyVaultClient
 from msrestazure.azure_active_directory import MSIAuthentication as MSICredentials, ServicePrincipalCredentials
 
@@ -14,13 +16,12 @@ class KeyVaultOAuthClient(KeyVaultClient):
     It's helpful for scenarios where one is transitioning from ADAL authentication to MSI,
     and exists to save the small code duplication of using either MSIAuthentication or ServicePrincipalCredentials.
     """
-    KEY_VAULT_RESOURCE_URL = 'https://vault.azure.net'
 
-    KEY_VAULT_URL_TEMPLATE = 'https://{key_vault_name}.vault.azure.net/'
     LATEST_SECRET_VERSION = ''
 
-    def __init__(self, client_id=None, client_secret=None, tenant_id=None, use_msi=False, logger=None, *args, **kwargs):
-        # type: (str, str, str, bool, Logger|logging) -> None
+    def __init__(self, client_id=None, client_secret=None, tenant_id=None, use_msi=False, logger=None,
+                 key_vault_resource_url='https://vault.azure.net', *args, **kwargs):
+        # type: (str, str, str, bool, Logger, str, TupleType, DictionaryType) -> None
         """
         Initiates a new key vault client with either MSI or ADAL token providers underneath.
 
@@ -34,6 +35,13 @@ class KeyVaultOAuthClient(KeyVaultClient):
         :param logger:          An optional logger to use in case of initialization errors
         """
         self._logger = logger or logging.getLogger(KeyVaultOAuthClient.__class__.__name__)
+        self.resource_url = key_vault_resource_url
+
+        splat_resource_url = list(urlsplit(key_vault_resource_url))
+        splat_resource_url[1] = '{key_vault_name}.' + splat_resource_url[1]
+        splat_resource_url[2] = '/'
+        assert len(splat_resource_url) >= 3, 'Failed to parse key vault resource url={}'.format(key_vault_resource_url)
+        self.key_vault_url_template = urlunsplit(splat_resource_url)
 
         if not use_msi and (not client_id or not client_secret or not tenant_id):
             err = 'You should either use MSI, or pass a valid client ID, secret and tenant ID'
@@ -43,11 +51,11 @@ class KeyVaultOAuthClient(KeyVaultClient):
         self._using_msi = use_msi
 
         if use_msi:
-            msi_creds = MSICredentials(resource=self.KEY_VAULT_RESOURCE_URL, client_id=client_id)
+            msi_creds = MSICredentials(resource=key_vault_resource_url, client_id=client_id)
             super(KeyVaultOAuthClient, self).__init__(msi_creds, *args, **kwargs)
         else:
             adal_creds = ServicePrincipalCredentials(client_id, client_secret, tenant=tenant_id,
-                                                     resource=self.KEY_VAULT_RESOURCE_URL)
+                                                     resource=key_vault_resource_url)
             super(KeyVaultOAuthClient, self).__init__(adal_creds, *args, **kwargs)
 
     def get_secret_with_key_vault_name(self, key_vault_name, secret_name, secret_version=LATEST_SECRET_VERSION):
@@ -62,7 +70,7 @@ class KeyVaultOAuthClient(KeyVaultClient):
         :param secret_version:  An optional version of the secret to fetch (latest being the default)
         :return:                The secret's value as a string
         """
-        key_vault_url = self.KEY_VAULT_URL_TEMPLATE.format(key_vault_name=key_vault_name)
+        key_vault_url = self.key_vault_url_template.format(key_vault_name=key_vault_name)
 
         try:
             return self.get_secret(key_vault_url, secret_name, secret_version).value
