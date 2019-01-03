@@ -1,5 +1,6 @@
 # keyvaultlib
-A KeyVault client wrapper that helps transition between using ADAL (Active Directory Authentication Libraries) and MSI (Managed Service Identity) as a token provider
+A KeyVault client wrapper that helps transition between using ADAL (Active Directory Authentication Libraries) and MSI (Managed Service Identity) as a token provider.
+Moreover, this library provides support for User-Assigned identities (MSI) and non-public (e.g. Government) Azure clouds.
 
 # What is KeyVault ?
 Key Vault is an Azure managed cloud service that allows you to securely store secrets in a variety of forms:
@@ -48,7 +49,11 @@ from keyvaultlib.key_vault import KeyVaultOAuthClient
 
 # MSI Example
 client = KeyVaultOAuthClient(use_msi=True)
-secret = client.get_secret_with_key_vault_name('my_key_vault', 'my_secret')
+secret = client.get_secret_with_key_vault_name('my-key-vault', 'my-secret')
+
+# MSI - User Assigned Identity example
+client = KeyVaultOAuthClient(use_msi=True, client_id='my_user_assigned_client_id')
+secret = client.get_secret_with_key_vault_name('my-key-vault', 'my-secret')
 
 # ADAL / SPN Example
 client = KeyVaultOAuthClient(
@@ -56,5 +61,14 @@ client = KeyVaultOAuthClient(
   client_secret='my_user_or_app_client_secret', 
   tenant_id='my_AAD_tenant_id'
 )
-secret = client.get_secret_with_key_vault_name('my_key_vault', 'my_secret')
+secret = client.get_secret_with_key_vault_name('my-key-vault', 'my-secret')
+
+# Using government / non-public Azure Clouds Example:
+client = KeyVaultOAuthClient(
+  client_id='my_user_or_app_client_id', 
+  client_secret='my_user_or_app_client_secret', 
+  tenant_id='my_AAD_tenant_id',
+  key_vault_resource_url='https://vault.usgovcloudapi.net'
+)
+secret = client.get_secret_with_key_vault_name('my-key-vault', 'my-secret')
 ```
