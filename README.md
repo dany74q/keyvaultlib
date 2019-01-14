@@ -63,6 +63,14 @@ client = KeyVaultOAuthClient(
 )
 secret = client.get_secret_with_key_vault_name('my-key-vault', 'my-secret')
 
+# Setting retry counts for request-throttling (Default is 5)
+client = KeyVaultOAuthClient(
+  client_id='my_user_or_app_client_id', 
+  client_secret='my_user_or_app_client_secret', 
+  tenant_id='my_AAD_tenant_id'
+)
+secret = client.get_secret_with_key_vault_name('my-key-vault', 'my-secret', throttling_retry_attempts=2)
+
 # Using government / non-public Azure Clouds Example:
 client = KeyVaultOAuthClient(
   client_id='my_user_or_app_client_id', 
