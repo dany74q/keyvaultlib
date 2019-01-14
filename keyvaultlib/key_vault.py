@@ -21,6 +21,7 @@ class KeyVaultOAuthClient(KeyVaultClient):
 
     LATEST_SECRET_VERSION = ''
     HTTP_TOO_MANY_REQUESTS = 429
+    RETRY_COUNT_EXPONENT_BOUND = 4
 
     def __init__(self, client_id=None, client_secret=None, tenant_id=None, use_msi=False, logger=None,
                  key_vault_resource_url='https://vault.azure.net', *args, **kwargs):
@@ -75,23 +76,28 @@ class KeyVaultOAuthClient(KeyVaultClient):
         :param throttling_retry_attempts:   If > 0, will exponentially retry that many times
         :return:                The secret's value as a string
         """
+        return self._get_secret_with_key_vault_name(key_vault_name, secret_name, secret_version,
+                                                    throttling_retry_attempts)
+
+    def _get_secret_with_key_vault_name(self, key_vault_name, secret_name, secret_version,
+                                        throttling_retry_attempts, retried_=0):
         key_vault_url = self.key_vault_url_template.format(key_vault_name=key_vault_name)
 
         try:
             return self.get_secret(key_vault_url, secret_name, secret_version).value
         except Exception as e:
-            import pdb
-            pdb.set_trace()
             if isinstance(e, KeyVaultErrorException) and hasattr(e, 'response') and hasattr(e.response, 'status_code') \
                     and e.response.status_code == self.HTTP_TOO_MANY_REQUESTS and throttling_retry_attempts > 0:
-                retry_time_seconds = 2 ** (5 - throttling_retry_attempts)
-                self._logger.error(
+                retry_time_seconds = 2 ** min(retried_, self.RETRY_COUNT_EXPONENT_BOUND)
+
+                self._logger.exception(
                     'Request was throttled vault={} secret={} version={} using_msi={} retrying_in={} seconds'.format(
                         key_vault_url, secret_name, secret_version, self._using_msi, retry_time_seconds
                     ))
+
                 sleep(retry_time_seconds)
-                return self.get_secret_with_key_vault_name(key_vault_name, secret_name, secret_version,
-                                                           throttling_retry_attempts - 1)
+                return self._get_secret_with_key_vault_name(key_vault_name, secret_name, secret_version,
+                                                            throttling_retry_attempts - 1, retried_ + 1)
 
             self._logger.exception('Failed retrieving secret vault={} secret={} version={} using_msi={}'.format(
                 key_vault_url, secret_name, secret_version, self._using_msi
