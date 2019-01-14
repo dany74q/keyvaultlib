@@ -1,10 +1,12 @@
 import logging
 from logging import Logger
 # noinspection PyPackageRequirements
+from time import sleep
 from types import TupleType, DictionaryType
 from urlparse import urlsplit, urlunsplit
 
 from azure.keyvault import KeyVaultClient
+from azure.keyvault.v7_0.models import KeyVaultErrorException
 from msrestazure.azure_active_directory import MSIAuthentication as MSICredentials, ServicePrincipalCredentials
 
 
@@ -18,6 +20,7 @@ class KeyVaultOAuthClient(KeyVaultClient):
     """
 
     LATEST_SECRET_VERSION = ''
+    HTTP_TOO_MANY_REQUESTS = 429
 
     def __init__(self, client_id=None, client_secret=None, tenant_id=None, use_msi=False, logger=None,
                  key_vault_resource_url='https://vault.azure.net', *args, **kwargs):
@@ -25,8 +28,8 @@ class KeyVaultOAuthClient(KeyVaultClient):
         """
         Initiates a new key vault client with either MSI or ADAL token providers underneath.
 
-        :param client_id:       An optional (when using System-Assigned MSI only) client ID - Of a user or an application that is authorized
-                                with your KeyVault resources. Required when using User-Assigned MSI and ADAL
+        :param client_id:       An optional (when using System-Assigned MSI only) client ID - Of a user or an-
+                                application that is authorized with your KeyVault resources. Required when using User-Assigned MSI and ADAL
         :param client_secret:   An optional (When using MSI) client secret - Of a user or an application that is authorized
                                 with your KeyVault resources
         :param tenant_id:       An optional (When using MSI) tenant ID of your KeyVault resources
@@ -58,8 +61,9 @@ class KeyVaultOAuthClient(KeyVaultClient):
                                                      resource=key_vault_resource_url)
             super(KeyVaultOAuthClient, self).__init__(adal_creds, *args, **kwargs)
 
-    def get_secret_with_key_vault_name(self, key_vault_name, secret_name, secret_version=LATEST_SECRET_VERSION):
-        # type: (str, str, str) -> basestring
+    def get_secret_with_key_vault_name(self, key_vault_name, secret_name, secret_version=LATEST_SECRET_VERSION,
+                                       throttling_retry_attempts=5):
+        # type: (str, str, str, int) -> basestring
 
         """
         Use this wrapper to get a KeyVault secret by KeyVault name (i.e. not by a full URL).
@@ -68,6 +72,7 @@ class KeyVaultOAuthClient(KeyVaultClient):
         :param key_vault_name:  Name of KeyVault resource (e.g. For 'https://mykv.vault.azure.net/' the name is 'mykv')
         :param secret_name:     The secret's name inside the KeyVault resource
         :param secret_version:  An optional version of the secret to fetch (latest being the default)
+        :param throttling_retry_attempts:   If > 0, will exponentially retry that many times
         :return:                The secret's value as a string
         """
         key_vault_url = self.key_vault_url_template.format(key_vault_name=key_vault_name)
@@ -75,7 +80,20 @@ class KeyVaultOAuthClient(KeyVaultClient):
         try:
             return self.get_secret(key_vault_url, secret_name, secret_version).value
         except Exception as e:
-            self._logger.error('Failed retrieving secret vault={} secret={} version={} using_msi={}'.format(
+            import pdb
+            pdb.set_trace()
+            if isinstance(e, KeyVaultErrorException) and hasattr(e, 'response') and hasattr(e.response, 'status_code') \
+                    and e.response.status_code == self.HTTP_TOO_MANY_REQUESTS and throttling_retry_attempts > 0:
+                retry_time_seconds = 2 ** (5 - throttling_retry_attempts)
+                self._logger.error(
+                    'Request was throttled vault={} secret={} version={} using_msi={} retrying_in={} seconds'.format(
+                        key_vault_url, secret_name, secret_version, self._using_msi, retry_time_seconds
+                    ))
+                sleep(retry_time_seconds)
+                return self.get_secret_with_key_vault_name(key_vault_name, secret_name, secret_version,
+                                                           throttling_retry_attempts - 1)
+
+            self._logger.exception('Failed retrieving secret vault={} secret={} version={} using_msi={}'.format(
                 key_vault_url, secret_name, secret_version, self._using_msi
             ))
             raise e
