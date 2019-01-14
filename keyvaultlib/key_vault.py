@@ -76,30 +76,26 @@ class KeyVaultOAuthClient(KeyVaultClient):
         :param throttling_retry_attempts:   If > 0, will exponentially retry that many times
         :return:                The secret's value as a string
         """
-        return self._get_secret_with_key_vault_name(key_vault_name, secret_name, secret_version,
-                                                    throttling_retry_attempts)
-
-    def _get_secret_with_key_vault_name(self, key_vault_name, secret_name, secret_version,
-                                        throttling_retry_attempts, retried_=0):
         key_vault_url = self.key_vault_url_template.format(key_vault_name=key_vault_name)
 
-        try:
-            return self.get_secret(key_vault_url, secret_name, secret_version).value
-        except Exception as e:
-            if isinstance(e, KeyVaultErrorException) and hasattr(e, 'response') and hasattr(e.response, 'status_code') \
-                    and e.response.status_code == self.HTTP_TOO_MANY_REQUESTS and throttling_retry_attempts > 0:
-                retry_time_seconds = 2 ** min(retried_, self.RETRY_COUNT_EXPONENT_BOUND)
+        for retry_attempt in xrange(throttling_retry_attempts + 1):
+            try:
+                return self.get_secret(key_vault_url, secret_name, secret_version).value
+            except Exception as e:
+                if isinstance(e, KeyVaultErrorException) and hasattr(e, 'response') \
+                        and hasattr(e.response, 'status_code') \
+                        and e.response.status_code == self.HTTP_TOO_MANY_REQUESTS \
+                        and retry_attempt < throttling_retry_attempts:
 
-                self._logger.exception(
-                    'Request was throttled vault={} secret={} version={} using_msi={} retrying_in={} seconds'.format(
-                        key_vault_url, secret_name, secret_version, self._using_msi, retry_time_seconds
+                    retry_time_seconds = 2 ** min(retry_attempt, self.RETRY_COUNT_EXPONENT_BOUND)
+
+                    self._logger.exception('Request was throttled vault={} secret={} version={} using_msi={} '
+                                           'retrying_in={} seconds'.format(key_vault_url, secret_name, secret_version,
+                                                                           self._using_msi, retry_time_seconds))
+
+                    sleep(retry_time_seconds)
+                else:
+                    self._logger.exception('Failed retrieving secret vault={} secret={} version={} using_msi={}'.format(
+                        key_vault_url, secret_name, secret_version, self._using_msi
                     ))
-
-                sleep(retry_time_seconds)
-                return self._get_secret_with_key_vault_name(key_vault_name, secret_name, secret_version,
-                                                            throttling_retry_attempts - 1, retried_ + 1)
-
-            self._logger.exception('Failed retrieving secret vault={} secret={} version={} using_msi={}'.format(
-                key_vault_url, secret_name, secret_version, self._using_msi
-            ))
-            raise e
+                    raise e
