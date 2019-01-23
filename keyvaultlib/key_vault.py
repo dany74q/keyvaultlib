@@ -6,7 +6,7 @@ from types import TupleType, DictionaryType
 from urlparse import urlsplit, urlunsplit
 
 from azure.keyvault import KeyVaultClient
-from azure.keyvault.v7_0.models import KeyVaultErrorException
+from azure.keyvault.models import KeyVaultErrorException
 from msrestazure.azure_active_directory import MSIAuthentication as MSICredentials, ServicePrincipalCredentials
 
 
