@@ -72,11 +72,13 @@ client = KeyVaultOAuthClient(
 secret = client.get_secret_with_key_vault_name('my-key-vault', 'my-secret', throttling_retry_attempts=2)
 
 # Using government / non-public Azure Clouds Example:
+from msrestazure.azure_cloud import AZURE_US_GOV_CLOUD
+
 client = KeyVaultOAuthClient(
   client_id='my_user_or_app_client_id', 
   client_secret='my_user_or_app_client_secret', 
   tenant_id='my_AAD_tenant_id',
-  key_vault_resource_url='https://vault.usgovcloudapi.net'
+  cloud=AZURE_US_GOV_CLOUD
 )
 secret = client.get_secret_with_key_vault_name('my-key-vault', 'my-secret')
 ```
