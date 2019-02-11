@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='keyvaultlib',
-    version='1.0.9',
+    version='1.1.1',
     description='A KeyVault client wrapper that helps transition between using ADAL (Active Directory Authentication Libraries) and MSI (Managed Service Identity) as a token provider',
     long_description=long_description,
     long_description_content_type='text/markdown',
