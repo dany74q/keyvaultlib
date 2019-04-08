@@ -1,14 +1,16 @@
 import logging
 from logging import Logger
-# noinspection PyPackageRequirements
 from time import sleep
-from types import TupleType, DictionaryType
-from urlparse import urlsplit, urlunsplit
 
+# noinspection PyPackageRequirements
 from azure.keyvault import KeyVaultClient
+# noinspection PyPackageRequirements
 from azure.keyvault.models import KeyVaultErrorException
 from msrestazure.azure_active_directory import MSIAuthentication as MSICredentials, ServicePrincipalCredentials
 from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD, Cloud
+from six import string_types
+from six.moves import xrange
+from six.moves.urllib.parse import urlsplit, urlunsplit
 
 
 class KeyVaultOAuthClient(KeyVaultClient):
@@ -26,7 +28,7 @@ class KeyVaultOAuthClient(KeyVaultClient):
 
     def __init__(self, client_id=None, client_secret=None, tenant_id=None, use_msi=False, logger=None,
                  cloud=None, *args, **kwargs):
-        # type: (str, str, str, bool, Logger, Cloud, TupleType, DictionaryType) -> None
+        # type: (str, str, str, bool, Logger, Cloud, tuple, dict) -> None
         """
         Initiates a new key vault client with either MSI or ADAL token providers underneath.
 
@@ -69,7 +71,7 @@ class KeyVaultOAuthClient(KeyVaultClient):
 
     def get_secret_with_key_vault_name(self, key_vault_name, secret_name, secret_version=LATEST_SECRET_VERSION,
                                        throttling_retry_attempts=5):
-        # type: (str, str, str, int) -> basestring
+        # type: (str, str, str, int) -> string_types
 
         """
         Use this wrapper to get a KeyVault secret by KeyVault name (i.e. not by a full URL).
