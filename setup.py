@@ -31,5 +31,5 @@ setup(
     ],
     keywords='keyvault azure adal msi managed-service-identity',
     packages=find_packages(),
-    install_requires=['msrestazure==0.5.0', 'azure-keyvault==1.1.0', 'azure-common==1.1.16', 'six==1.11.0']
+    install_requires=['msrestazure==0.5.0', 'azure-keyvault==1.1.0', 'azure-common==1.1.16', 'six>=1.12.0']
 )
