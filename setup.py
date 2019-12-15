@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='keyvaultlib',
-    version='1.1.3',
+    version='1.1.4',
     description='A KeyVault client wrapper that helps transition between using ADAL (Active Directory Authentication Libraries) and MSI (Managed Service Identity) as a token provider',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -31,5 +31,5 @@ setup(
     ],
     keywords='keyvault azure adal msi managed-service-identity',
     packages=find_packages(),
-    install_requires=['msrestazure==0.5.0', 'azure-keyvault==1.1.0', 'azure-common==1.1.16', 'six>=1.12.0']
+    install_requires=['msrestazure==0.5.0', 'azure-keyvault==1.1.0', 'azure-common==1.1.16', 'six>=1.12.0', 'urllib3==1.24.3']
 )
